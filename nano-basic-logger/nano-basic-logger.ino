@@ -213,7 +213,7 @@ void loop() {
           digitalWrite(GREEN, LOW);
           digitalWrite(BLUE, LOW);
           digitalWrite(RED, LOW);
-          return;
+          //return;
         } else {
           // Rad. lets log it!
           Serial.println("Log");
@@ -237,11 +237,11 @@ void loop() {
     digitalWrite(GREEN, LOW);
     delay(2000);
     if (menu == true) {
-      char filename[15];
-      strcpy(filename, "GPSLOG00.TXT");
+      char filename[21];
+      strcpy(filename, "/DATA/GPSLOG00.CSV");
       for (uint8_t i = 0; i < 100; i++) {
-        filename[6] = '0' + i / 10;
-        filename[7] = '0' + i % 10;
+        filename[12] = '0' + i / 10;
+        filename[13] = '0' + i % 10;
         // create if does not exist, do not open existing, write, sync after write
         if (! SD.exists(filename)) {
           break;
