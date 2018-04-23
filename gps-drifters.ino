@@ -2,7 +2,7 @@
 // 17ELD030 - Advanced Project
 // GPS Drifter Code
 
-#define VERSION "1.01.00"
+#define VERSION "1.02.00"
 
 // VERSION HISTORY
 // v1.00.00  - RGB class written with both analog and digital outs.
@@ -15,9 +15,9 @@
 // v1.02.00  - Added fade to RGB class.
 //           - Added charge detect function to battery class.
 //           - RGB fades when charging.
+// v1.03.00  - Started GPS class.
 
 // TODO
-// - Implement univeral fade in RGB class by saving LED state.
 // - Comment classes.
 
 // HARDWARE (From https://shop.pimoroni.com)
@@ -45,6 +45,7 @@
 #include "Buzzer.h"
 #include "Button.h"
 #include "Battery.h"
+#include "QuinnGPS.h"
 
 #define ACTIVE LOW
 #define DEBUG  false
@@ -59,19 +60,21 @@ const int   redPin      = 10;
 const int   greenPin    = 11;
 const int   bluePin     = 12;
 
-RGBled  RGB(redPin, greenPin, bluePin);
-Buzzer  buzzer(buzzerPin);
-Button  button(buttonPin);
-Battery battery(batteryPin, chargePin);
+RGBled    RGB(redPin, greenPin, bluePin);
+Buzzer    buzzer(buzzerPin);
+Button    button(buttonPin);
+Battery   battery(batteryPin, chargePin);
+QuinnGPS  gps(0,1);
 
 const bool RED[]     = {1, 0, 0};
 const bool GREEN[]   = {0, 1, 0};
 const bool BLUE[]    = {0, 0, 1};
 const bool YELLOW[]  = {1, 1, 0};
 
-unsigned int menu    = 0;
-unsigned int submenu = 0;
-const long printFreq = 1; // in Hz
+unsigned int menu       = 0;
+unsigned int submenu    = 0;
+const float printFreq   = 1;   // in Hz
+const float sampleFreq  = 1;  // in Hz
 
 // SETUP & LOOP ===============================================================
 
@@ -86,7 +89,7 @@ void loop() {
       idle();
       break;
     case 1:   // loggging mode
-      RGB.flash(RED, 50, 1500);
+      RGB.fade(YELLOW, 2000, 500);
       break;
     case 2:   // live mode
       live();
@@ -102,14 +105,15 @@ void init_pins() {
   pinMode(cardDetect, INPUT_PULLUP);
 }
 
-// Start serial port, play buzzer startup tone and cycle full RGB spectrum
-//    to test LED.
+// Start serial port, play buzzer startup tone, cycle full RGB spectrum
+//    to test LED and begin GPS module.
 void start_up() {
   Serial.begin(115200);
   buzzer.startup();
   RGB.off();
   RGB.cycle();
   buzzer.off();
+  gps.begin(sampleFreq);
 }
 
 // Chooses the menu or submenu based on variable input.
@@ -161,6 +165,8 @@ void live() {
     Serial.println(battery.charging());
     Serial.println(millis());
     Serial.println(digitalRead(cardDetect));
+    Serial.println(gps.read());
     Serial.println("");
+
   }
 }
