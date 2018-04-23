@@ -24,6 +24,7 @@ class RGBled
     void cyan();
     void magenta();
     void white();
+    void fade(const bool value[], int period, int displace);
 
   private:
     int _pins[3];

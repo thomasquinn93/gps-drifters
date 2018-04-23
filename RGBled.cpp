@@ -92,12 +92,9 @@ void RGBled::flash(const bool value[], int onTime, int offTime) {
   unsigned long currentMillis = millis();
 
   if ((unsigned long)(currentMillis - previousMillis) >= interval) {
-
     if (ledState) {
-
       interval = offTime;
     } else {
-
       interval = onTime;
     }
     ledState = !ledState;
@@ -152,4 +149,26 @@ void RGBled::white() {
   digitalWrite(_pins[0],  ACTIVE);
   digitalWrite(_pins[1],  ACTIVE);
   digitalWrite(_pins[2],  ACTIVE);
+}
+
+void RGBled::fade(const bool value[], int period, int displace) {
+  long time = millis();
+  int rbval = 128+127*cos(2*PI/period*time);
+  int gbval = 128+127*cos(2*PI/period*time);
+  int bbval = 128+127*cos(2*PI/period*time);
+  analogWrite(_pins[0], rbval);           // sets the value (range from 0 to 255)
+  analogWrite(_pins[1], gbval);           // sets the value (range from 0 to 255)
+  analogWrite(_pins[2], bbval);           // sets the value (range from 0 to 255)
+  if (value[0] == 0) {
+    pinMode(_pins[0], OUTPUT);
+    digitalWrite(_pins[0], !ACTIVE);
+  }
+  if (value[1] == 0) {
+    pinMode(_pins[1], OUTPUT);
+    digitalWrite(_pins[1], !ACTIVE);
+  }
+  if (value[2] == 0) {
+    pinMode(_pins[2], OUTPUT);
+    digitalWrite(_pins[2], !ACTIVE);
+  }
 }

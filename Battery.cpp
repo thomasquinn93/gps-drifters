@@ -40,8 +40,14 @@ int Battery::status() {
 }
 
 bool Battery::charging() {
-  bool charging = false;
-  if (read() > 1) {
+  bool charging    = false;
+  float chargeVolt = analogRead(_pins[1]);
+
+  chargeVolt *= 1.88;    // potential divider divides by factor of 1.88
+  chargeVolt *= LOGIC;   // multiply by the reference voltage of 3.3v
+  chargeVolt /= 1024;    // convert to voltage
+
+  if (chargeVolt >= 5) {
     charging = true;
   }
   return charging;

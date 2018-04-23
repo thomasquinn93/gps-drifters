@@ -12,6 +12,9 @@
 //           - Idle mode added (ready to log).
 //           - Live mode added (print information to serial port).
 //           - Added battery class.
+// v1.02.00  - Added fade to RGB class.
+//           - Added charge detect function to battery class.
+//           - RGB fades when charging.
 
 // TODO
 // - Implement univeral fade in RGB class by saving LED state.
@@ -44,6 +47,7 @@
 #include "Battery.h"
 
 #define ACTIVE LOW
+#define DEBUG  false
 
 const int   chipSelect  = 4;
 const int   buttonPin   = 5;
@@ -82,12 +86,12 @@ void loop() {
       idle();
       break;
     case 1:   // loggging mode
-      RGB.red();
+      RGB.flash(RED, 50, 1500);
       break;
     case 2:   // live mode
       live();
       break;
-  }
+    }
 }
 
 // FUNCTIONS ==================================================================
@@ -126,17 +130,27 @@ int menu_select(unsigned int buttonState) {
 
 // Mode indicating ready to log.
 void idle() {
-  RGB.flash(GREEN, 50, 1500);
+  if (battery.charging() == true) {
+    RGB.fade(GREEN, 2000, 500);
+  } else {
+    RGB.flash(GREEN, 50, 1500);
+  }
 }
 
 // Mode printing data to serial port at 115200 baud. Prints software version,
 //    current millis.
 void live() {
-  RGB.flash(BLUE, 50, 1500);
-  unsigned long _currentMillis = millis();
-  static unsigned long _previousMillis = 0;
-  if (_currentMillis - _previousMillis >= (1000/printFreq)) {
-    _previousMillis = _currentMillis;
+  unsigned long currentMillis = millis();
+  static unsigned long previousMillis = 0;
+
+  if (battery.charging() == true) {
+    RGB.fade(BLUE, 2000, 500);
+  } else {
+    RGB.flash(BLUE, 50, 1500);
+  }
+
+  if (currentMillis - previousMillis >= (1000/printFreq)) {
+    previousMillis = currentMillis;
     Serial.print("Version: ");
     Serial.println(VERSION);
     Serial.print("Battery Voltage: " );
