@@ -10,7 +10,7 @@
 class Buzzer
 {
   public:
-    Buzzer(int pin);
+    Buzzer(int buzzerPin);
     void off();
     void on(unsigned int val);
     void startup();

@@ -12,7 +12,7 @@
 class Button
 {
   public:
-    Button(int pin);
+    Button(int buttonPin);
     bool read();
     void readOnce();
     int poll();

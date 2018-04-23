@@ -10,8 +10,8 @@
 
 #define ACTIVE LOW // micro as sync = LOW, micro as source = HIGH
 
-Buzzer::Buzzer(int pin) {
-  _pin = pin;
+Buzzer::Buzzer(int buzzerPin) {
+  _pin = buzzerPin;
 }
 
 // Turns buzzer off.

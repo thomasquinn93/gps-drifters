@@ -2,17 +2,20 @@
 // 17ELD030 - Advanced Project
 // GPS Drifter Code
 
-#define version "1.00.00"
+#define VERSION "1.01.00"
 
 // VERSION HISTORY
 // v1.00.00  - RGB class written with both analog and digital outs.
 //           - Button class written with 3 states, none, short or long press.
 //           - Buzzer class written with startup tone.
+// v1.01.00  - Added flash function to RGB class.
+//           - Idle mode added (ready to log).
+//           - Live mode added (print information to serial port).
+//           - Added battery class.
 
 // TODO
 // - Implement univeral fade in RGB class by saving LED state.
 // - Comment classes.
-// - Add blinks to LED class. 
 
 // HARDWARE (From https://shop.pimoroni.com)
 // Adafruit Feather M0 Adalogger     - ADA2796.
@@ -38,6 +41,7 @@
 #include "RGBled.h"
 #include "Buzzer.h"
 #include "Button.h"
+#include "Battery.h"
 
 #define ACTIVE LOW
 
@@ -45,7 +49,8 @@ const int   chipSelect  = 4;
 const int   buttonPin   = 5;
 const int   buzzerPin   = 6;
 const int   cardDetect  = 7;
-const float batteryPin  = A7;
+const int   batteryPin  = A7;
+const int   chargePin   = A1;
 const int   redPin      = 10;
 const int   greenPin    = 11;
 const int   bluePin     = 12;
@@ -53,26 +58,34 @@ const int   bluePin     = 12;
 RGBled  RGB(redPin, greenPin, bluePin);
 Buzzer  buzzer(buzzerPin);
 Button  button(buttonPin);
+Battery battery(batteryPin, chargePin);
 
-unsigned int menu = 0;
+const bool RED[]     = {1, 0, 0};
+const bool GREEN[]   = {0, 1, 0};
+const bool BLUE[]    = {0, 0, 1};
+const bool YELLOW[]  = {1, 1, 0};
+
+unsigned int menu    = 0;
 unsigned int submenu = 0;
+const long printFreq = 1; // in Hz
 
 // SETUP & LOOP ===============================================================
 
 void setup() {
   init_pins();
+  start_up();
 }
 
 void loop() {
-  switch (menuSelect(button.poll())) {
+  switch (menu_select(button.poll())) {
     default:  // idle mode
-      RGB.green();
+      idle();
       break;
     case 1:   // loggging mode
       RGB.red();
       break;
     case 2:   // live mode
-      RGB.blue();
+      live();
       break;
   }
 }
@@ -80,11 +93,15 @@ void loop() {
 // FUNCTIONS ==================================================================
 
 // Set pinmodes for inputs. RGB pinmodes are set in class due to using both
-//    analog & digital out on the same pins. Play buzzer startup tone and cycle
-//    full RGB spectrum to test LED.
+//    analog & digital out on the same pins.
 void init_pins() {
-  pinMode(buttonPin,  INPUT_PULLUP);
   pinMode(cardDetect, INPUT_PULLUP);
+}
+
+// Start serial port, play buzzer startup tone and cycle full RGB spectrum
+//    to test LED.
+void start_up() {
+  Serial.begin(115200);
   buzzer.startup();
   RGB.off();
   RGB.cycle();
@@ -92,7 +109,7 @@ void init_pins() {
 }
 
 // Chooses the menu or submenu based on variable input.
-int menuSelect(unsigned int buttonState) {
+int menu_select(unsigned int buttonState) {
   if (buttonState == 1) {
     menu++;
     if (menu > 2) {
@@ -105,4 +122,31 @@ int menuSelect(unsigned int buttonState) {
     }
   }
   return menu;
+}
+
+// Mode indicating ready to log.
+void idle() {
+  RGB.flash(GREEN, 50, 1500);
+}
+
+// Mode printing data to serial port at 115200 baud. Prints software version,
+//    current millis.
+void live() {
+  RGB.flash(BLUE, 50, 1500);
+  unsigned long _currentMillis = millis();
+  static unsigned long _previousMillis = 0;
+  if (_currentMillis - _previousMillis >= (1000/printFreq)) {
+    _previousMillis = _currentMillis;
+    Serial.print("Version: ");
+    Serial.println(VERSION);
+    Serial.print("Battery Voltage: " );
+    Serial.println(battery.read());
+    Serial.print("Battery State: " );
+    Serial.println(battery.status());
+    Serial.print("Battery Charging: " );
+    Serial.println(battery.charging());
+    Serial.println(millis());
+    Serial.println(digitalRead(cardDetect));
+    Serial.println("");
+  }
 }

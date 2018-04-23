@@ -10,9 +10,9 @@
 
 #define ACTIVE HIGH // pull up = HIGH, pull down = LOW (CHANGE IN HEADER ALSO)
 
-Button::Button(int pin) {
-  pinMode(pin, INPUT_PULLUP);
-  _pin = pin;
+Button::Button(int buttonPin) {
+  pinMode(buttonPin, INPUT_PULLUP);
+  _pin = buttonPin;
 }
 
 bool Button::read() {

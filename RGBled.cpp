@@ -18,10 +18,10 @@
   #define PWMON  255
 #endif
 
-RGBled::RGBled(int red_pin, int green_pin, int blue_pin) {
-  _pins[0] = red_pin;
-  _pins[1] = green_pin;
-  _pins[2] = blue_pin;
+RGBled::RGBled(int redPin, int greenPin, int bluePin) {
+  _pins[0] = redPin;
+  _pins[1] = greenPin;
+  _pins[2] = bluePin;
 }
 
 void RGBled::off() {
@@ -75,34 +75,35 @@ void RGBled::setColorRGB(unsigned int red, unsigned int green, unsigned int blue
   analogWrite(_pins[2], blue);
 }
 
-// void RGBled::color(const bool color[]) {
-//   digitalWrite(_pins[0], !ACTIVE ^ color[0]);
-//   digitalWrite(_pins[1], !ACTIVE ^ color[1]);
-//   digitalWrite(_pins[2], !ACTIVE ^ color[2]);
-// }
-//
-// void RGBled::flash(const bool value[], int onTime, int offTime) {
-//   if (ledState) {
-//     color(value);
-//   } else {
-//     off();
-//   }
-//
-//   unsigned long currentMillis = millis();
-//
-//   if ((unsigned long)(currentMillis - previousMillis) >= interval) {
-//
-//     if (ledState) {
-//
-//       interval = offTime;
-//     } else {
-//
-//       interval = onTime;
-//     }
-//     ledState = !ledState;
-//     previousMillis = currentMillis;
-//   }
-// }
+void RGBled::color(const bool color[]) {
+  mode();
+  digitalWrite(_pins[0], !ACTIVE ^ color[0]);
+  digitalWrite(_pins[1], !ACTIVE ^ color[1]);
+  digitalWrite(_pins[2], !ACTIVE ^ color[2]);
+}
+
+void RGBled::flash(const bool value[], int onTime, int offTime) {
+  if (ledState) {
+    color(value);
+  } else {
+    off();
+  }
+
+  unsigned long currentMillis = millis();
+
+  if ((unsigned long)(currentMillis - previousMillis) >= interval) {
+
+    if (ledState) {
+
+      interval = offTime;
+    } else {
+
+      interval = onTime;
+    }
+    ledState = !ledState;
+    previousMillis = currentMillis;
+  }
+}
 
 void RGBled::red() {
   mode();
