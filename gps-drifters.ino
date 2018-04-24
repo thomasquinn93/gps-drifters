@@ -2,7 +2,7 @@
 // 17ELD030 - Advanced Project
 // GPS Drifter Code
 
-#define VERSION "1.02.00"
+#define VERSION "1.04.00"
 
 // VERSION HISTORY
 // v1.00.00  - RGB class written with both analog and digital outs.
@@ -16,9 +16,11 @@
 //           - Added charge detect function to battery class.
 //           - RGB fades when charging.
 // v1.03.00  - Started GPS class.
+// v1.04.00  - Finished GPS class.
 
 // TODO
 // - Comment classes.
+// - SD class.
 
 // HARDWARE (From https://shop.pimoroni.com)
 // Adafruit Feather M0 Adalogger     - ADA2796.
@@ -71,10 +73,9 @@ const bool GREEN[]   = {0, 1, 0};
 const bool BLUE[]    = {0, 0, 1};
 const bool YELLOW[]  = {1, 1, 0};
 
-unsigned int menu       = 0;
+unsigned int menu       = 2;
 unsigned int submenu    = 0;
-const float printFreq   = 1;   // in Hz
-const float sampleFreq  = 1;  // in Hz
+const float sampleFreq  = 1;  // 0.2, 0.1, 1, 2 or 5 Hz
 
 // SETUP & LOOP ===============================================================
 
@@ -109,10 +110,10 @@ void init_pins() {
 //    to test LED and begin GPS module.
 void start_up() {
   Serial.begin(115200);
-  buzzer.startup();
-  RGB.off();
-  RGB.cycle();
-  buzzer.off();
+  ///buzzer.startup();
+  //RGB.off();
+  //RGB.cycle();
+  //buzzer.off();
   gps.begin(sampleFreq);
 }
 
@@ -153,20 +154,54 @@ void live() {
     RGB.flash(BLUE, 50, 1500);
   }
 
-  if (currentMillis - previousMillis >= (1000/printFreq)) {
+  gps.read();
+
+  if (currentMillis - previousMillis >= (1000/sampleFreq)) {
     previousMillis = currentMillis;
-    Serial.print("Version: ");
-    Serial.println(VERSION);
-    Serial.print("Battery Voltage: " );
-    Serial.println(battery.read());
-    Serial.print("Battery State: " );
-    Serial.println(battery.status());
-    Serial.print("Battery Charging: " );
-    Serial.println(battery.charging());
-    Serial.println(millis());
-    Serial.println(digitalRead(cardDetect));
-    Serial.println(gps.read());
+    Serial.println("========================================================");
+    Serial.println("");
+    Serial.print("Version: ");     Serial.println(VERSION);
+    Serial.print("Card Detect: "); Serial.println(digitalRead(cardDetect));
     Serial.println("");
 
+    Serial.print("Battery Voltage : " ); Serial.println(battery.read());
+    Serial.print("Battery State   : " ); Serial.println(battery.status());
+    Serial.print("Battery Charging: " ); Serial.println(battery.charging());
+    Serial.println("");
+
+    Serial.print("Time: "); Serial.print(gps.hour());
+    Serial.print(":");      Serial.print(gps.minute());
+    Serial.print(":");      Serial.println(gps.seconds());
+    Serial.print("Date: "); Serial.print(gps.day());
+    Serial.print(":");      Serial.print(gps.month());
+    Serial.print(":");      Serial.println(gps.year());
+    Serial.println("");
+
+    Serial.print("Latitude          : "); Serial.println(gps.latitude());
+    Serial.print("Latitude Fixed    : "); Serial.println(gps.latitude_fixed());
+    Serial.print("Latitude Degrees  : "); Serial.println(gps.latitudeDegrees());
+    Serial.print("Lat : ");               Serial.println(gps.lat());
+    Serial.println("");
+
+    Serial.print("Longitude         : "); Serial.println(gps.longitude());
+    Serial.print("Longitude Fixed   : "); Serial.println(gps.longitude_fixed());
+    Serial.print("Longitude Degrees : "); Serial.println(gps.longitudeDegrees());
+    Serial.print("Lon : ");               Serial.println(gps.lon());
+    Serial.println("");
+
+    Serial.print("Geoidal Seperation: "); Serial.println(gps.geoidheight());
+    Serial.print("Magnetic Variation: "); Serial.println(gps.magvariation());
+    Serial.print("Speed (knots): ");      Serial.println(gps.speed());
+    Serial.print("Altitude     : ");      Serial.println(gps.altitude());
+    Serial.print("Angle        : ");      Serial.println(gps.angle());
+    Serial.print("HDOP: ");               Serial.println(gps.HDOP());
+    Serial.print("Mag : ");               Serial.println(gps.mag());
+    Serial.print("Fix : ");               Serial.println(gps.fix());
+    Serial.print("Quality: ");            Serial.println(gps.fixquality());
+    Serial.print("Satellites: ");         Serial.println(gps.satellites());
+    Serial.println("");
+
+    Serial.print("Millis: ");             Serial.println(millis());
+    Serial.println("");
   }
 }
