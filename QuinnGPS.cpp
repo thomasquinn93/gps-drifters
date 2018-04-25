@@ -1,6 +1,6 @@
 // Thomas Quinn B224307 thomas.quinn93@icloud.com
 // 17ELD030 - Advanced Project
-// GPS.cpp - Interfacing between GPS module and microcontroller
+// QuinnGPS.cpp - Interfacing between GPS module and microcontroller
 
 // ARDUINO LIBRARIES ----------------------------------------------------------
 #include "Arduino.h"

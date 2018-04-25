@@ -2,7 +2,7 @@
 // 17ELD030 - Advanced Project
 // GPS Drifter Code
 
-#define VERSION "1.04.00"
+#define VERSION "1.05.00"
 
 // VERSION HISTORY
 // v1.00.00  - RGB class written with both analog and digital outs.
@@ -17,10 +17,13 @@
 //           - RGB fades when charging.
 // v1.03.00  - Started GPS class.
 // v1.04.00  - Finished GPS class.
+// v1.05.00  - Wrote SD class.
+//           - Data saves to file.
 
 // TODO
 // - Comment classes.
-// - SD class.
+// - Split file after time period.
+// - display errors on LED.
 
 // HARDWARE (From https://shop.pimoroni.com)
 // Adafruit Feather M0 Adalogger     - ADA2796.
@@ -48,9 +51,9 @@
 #include "Button.h"
 #include "Battery.h"
 #include "QuinnGPS.h"
+#include "QuinnSD.h"
 
 #define ACTIVE LOW
-#define DEBUG  false
 
 const int   chipSelect  = 4;
 const int   buttonPin   = 5;
@@ -67,30 +70,35 @@ Buzzer    buzzer(buzzerPin);
 Button    button(buttonPin);
 Battery   battery(batteryPin, chargePin);
 QuinnGPS  gps(0,1);
+QuinnSD   sd(chipSelect, cardDetect);
 
 const bool RED[]     = {1, 0, 0};
 const bool GREEN[]   = {0, 1, 0};
 const bool BLUE[]    = {0, 0, 1};
 const bool YELLOW[]  = {1, 1, 0};
 
-unsigned int menu       = 2;
+unsigned int menu       = 0;
 unsigned int submenu    = 0;
 const float sampleFreq  = 1;  // 0.2, 0.1, 1, 2 or 5 Hz
 
 // SETUP & LOOP ===============================================================
 
 void setup() {
-  init_pins();
   start_up();
 }
 
 void loop() {
+  gps.read();
   switch (menu_select(button.poll())) {
     default:  // idle mode
       idle();
       break;
     case 1:   // loggging mode
-      RGB.fade(YELLOW, 2000, 500);
+      // if (battery.charging()) {
+      //   menu++;
+      //   break;
+      // }
+      record();
       break;
     case 2:   // live mode
       live();
@@ -99,12 +107,6 @@ void loop() {
 }
 
 // FUNCTIONS ==================================================================
-
-// Set pinmodes for inputs. RGB pinmodes are set in class due to using both
-//    analog & digital out on the same pins.
-void init_pins() {
-  pinMode(cardDetect, INPUT_PULLUP);
-}
 
 // Start serial port, play buzzer startup tone, cycle full RGB spectrum
 //    to test LED and begin GPS module.
@@ -115,6 +117,7 @@ void start_up() {
   //RGB.cycle();
   //buzzer.off();
   gps.begin(sampleFreq);
+
 }
 
 // Chooses the menu or submenu based on variable input.
@@ -143,7 +146,7 @@ void idle() {
 }
 
 // Mode printing data to serial port at 115200 baud. Prints software version,
-//    current millis.
+//    current millis and all GPS data.
 void live() {
   unsigned long currentMillis = millis();
   static unsigned long previousMillis = 0;
@@ -160,21 +163,21 @@ void live() {
     previousMillis = currentMillis;
     Serial.println("========================================================");
     Serial.println("");
-    Serial.print("Version: ");     Serial.println(VERSION);
-    Serial.print("Card Detect: "); Serial.println(digitalRead(cardDetect));
+    Serial.print("Version: ");            Serial.println(VERSION);
+    Serial.print("Card Detect: ");        Serial.println(digitalRead(cardDetect));
     Serial.println("");
 
-    Serial.print("Battery Voltage : " ); Serial.println(battery.read());
-    Serial.print("Battery State   : " ); Serial.println(battery.status());
-    Serial.print("Battery Charging: " ); Serial.println(battery.charging());
+    Serial.print("Time: ");               Serial.print(gps.hour());
+    Serial.print(":");                    Serial.print(gps.minute());
+    Serial.print(":");                    Serial.println(gps.seconds());
+    Serial.print("Date: ");               Serial.print(gps.day());
+    Serial.print(":");                    Serial.print(gps.month());
+    Serial.print(":");                    Serial.println(gps.year());
     Serial.println("");
 
-    Serial.print("Time: "); Serial.print(gps.hour());
-    Serial.print(":");      Serial.print(gps.minute());
-    Serial.print(":");      Serial.println(gps.seconds());
-    Serial.print("Date: "); Serial.print(gps.day());
-    Serial.print(":");      Serial.print(gps.month());
-    Serial.print(":");      Serial.println(gps.year());
+    Serial.print("Battery Voltage : " );  Serial.println(battery.read());
+    Serial.print("Battery State   : " );  Serial.println(battery.status());
+    Serial.print("Battery Charging: " );  Serial.println(battery.charging());
     Serial.println("");
 
     Serial.print("Latitude          : "); Serial.println(gps.latitude());
@@ -203,5 +206,67 @@ void live() {
 
     Serial.print("Millis: ");             Serial.println(millis());
     Serial.println("");
+
+  }
+}
+
+void record() {
+
+  if (battery.charging() == true) {
+    RGB.fade(YELLOW, 2000, 500);
+  } else {
+    RGB.flash(YELLOW, 50, 1500);
+  }
+
+  if (submenu == 1) {
+    for (int i = 0; i < 5; i++) {
+      RGB.red();
+      delay(500);
+      RGB.off();
+      delay(500);
+    }
+
+    sd.begin();
+    sd.fileName();
+    sd.fileCreate();
+    sd.writeHeader(gps.year(), gps.month(), gps.day(), sampleFreq);
+
+    while(1) {
+      unsigned long currentMillis = millis();
+      static unsigned long previousMillis = 0;
+
+      if (battery.charging() == true) {
+        RGB.fade(RED, 2000, 500);
+      } else {
+        RGB.flash(RED, 50, 1500);
+      }
+
+      gps.read();
+
+      if (currentMillis - previousMillis >= (1000/sampleFreq)) {
+        previousMillis = currentMillis;
+        String data = {String(gps.hour()) + "," + String(gps.minute()) + "," + String(gps.seconds()) + "," + String(gps.milliseconds())
+        + "," + String(gps.latitude()) + "," + String(gps.lat()) + "," + String(gps.latitude_fixed()) + "," + String(gps.latitudeDegrees())
+        + "," + String(gps.longitude()) + "," + String(gps.lon()) + "," + String(gps.longitude_fixed()) + "," + String(gps.longitudeDegrees())
+        + "," + String(gps.HDOP()) + "," + String(gps.geoidheight()) + "," + String(gps.magvariation()) + "," + String(gps.speed())
+        + "," + String(gps.angle()) + "," + String(gps.altitude()) + "," + String(gps.fixquality()) + "," + String(gps.satellites()) + "," + String(gps.fix())};
+        char dataBuffer[data.length()+15];
+        data.toCharArray(dataBuffer,data.length()+15);
+
+        sd.fileWrite(dataBuffer);
+      }
+
+      if (button.poll() == 2){
+        submenu = 0;
+        sd.fileClose();
+        for (int i = 0; i < 5; i++) {
+          RGB.yellow();
+          delay(100);
+          RGB.off();
+          delay(100);
+        }
+        break;
+      }
+    }
   }
 }

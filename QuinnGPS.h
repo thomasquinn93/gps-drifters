@@ -1,6 +1,6 @@
 // Thomas Quinn B224307 thomas.quinn93@icloud.com
 // 17ELD030 - Advanced Project
-// GPS.h - Interfacing between GPS module and microcontroller
+// QuinnGPS.h - Interfacing between GPS module and microcontroller
 
 #ifndef QuinnGPS_h
 #define QuinnGPS_h
@@ -39,7 +39,7 @@ class QuinnGPS
     uint8_t fixquality();
     uint8_t satellites();
   private:
-    int _pins[3];
+    int _pins[2];
 };
 
 #endif
