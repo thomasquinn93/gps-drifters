@@ -2,7 +2,7 @@
 // 17ELD030 - Advanced Project
 // GPS Drifter Code
 
-#define VERSION "1.05.00"
+#define VERSION "1.06.00"
 
 // VERSION HISTORY
 // v1.00.00  - RGB class written with both analog and digital outs.
@@ -19,11 +19,14 @@
 // v1.04.00  - Finished GPS class.
 // v1.05.00  - Wrote SD class.
 //           - Data saves to file.
+// v1.06.00  - Created Hall Effect sensor class (Same as button class).
+//           - Added hall effect sensor to act as button.
 
 // TODO
 // - Comment classes.
 // - Split file after time period.
 // - display errors on LED.
+// - Transfer Mode.
 
 // HARDWARE (From https://shop.pimoroni.com)
 // Adafruit Feather M0 Adalogger     - ADA2796.
@@ -42,6 +45,7 @@
 // RGB Red      - Pin 10.
 // RGB Green    - Pin 11.
 // RGB Blue     - Pin 12.
+// Hall Effect  - Pin 13.
 
 //=============================================================================
 
@@ -52,22 +56,23 @@
 #include "Battery.h"
 #include "QuinnGPS.h"
 #include "QuinnSD.h"
+#include "Hall.h"
 
-#define ACTIVE LOW
-
-const int   chipSelect  = 4;
-const int   buttonPin   = 5;
-const int   buzzerPin   = 6;
-const int   cardDetect  = 7;
-const int   batteryPin  = A7;
-const int   chargePin   = A1;
-const int   redPin      = 10;
-const int   greenPin    = 11;
-const int   bluePin     = 12;
+const int chipSelect  = 4;
+const int buttonPin   = 5;
+const int buzzerPin   = 6;
+const int cardDetect  = 7;
+const int batteryPin  = A7;
+const int chargePin   = A1;
+const int redPin      = 10;
+const int greenPin    = 11;
+const int bluePin     = 12;
+const int hallPin     = 13;
 
 RGBled    RGB(redPin, greenPin, bluePin);
 Buzzer    buzzer(buzzerPin);
 Button    button(buttonPin);
+Hall      hall(hallPin);
 Battery   battery(batteryPin, chargePin);
 QuinnGPS  gps(0,1);
 QuinnSD   sd(chipSelect, cardDetect);
@@ -89,7 +94,7 @@ void setup() {
 
 void loop() {
   gps.read();
-  switch (menu_select(button.poll())) {
+  switch (menu_select(button.poll(), hall.poll())) {
     default:  // idle mode
       idle();
       break;
@@ -112,27 +117,27 @@ void loop() {
 //    to test LED and begin GPS module.
 void start_up() {
   Serial.begin(115200);
-  ///buzzer.startup();
-  //RGB.off();
-  //RGB.cycle();
-  //buzzer.off();
+  buzzer.startup();
+  RGB.off();
+  RGB.cycle();
+  buzzer.off();
   gps.begin(sampleFreq);
-
 }
 
 // Chooses the menu or submenu based on variable input.
-int menu_select(unsigned int buttonState) {
-  if (buttonState == 1) {
+int menu_select(unsigned int buttonState, unsigned int hallState) {
+  if (buttonState == 1 || hallState == 1) {
     menu++;
     if (menu > 2) {
       menu = 0;
     }
-  } else if (buttonState == 2) {
+  } else if (buttonState == 2 || hallState == 2) {
     submenu++;
     if (submenu > 1) {
       submenu = 0;
     }
   }
+
   return menu;
 }
 
@@ -210,8 +215,8 @@ void live() {
   }
 }
 
+// Mode recording data to SD card.
 void record() {
-
   if (battery.charging() == true) {
     RGB.fade(YELLOW, 2000, 500);
   } else {
@@ -242,7 +247,7 @@ void record() {
       }
 
       gps.read();
-
+      buzzer.flash(128, 50, 1500);
       if (currentMillis - previousMillis >= (1000/sampleFreq)) {
         previousMillis = currentMillis;
         String data = {String(gps.hour()) + "," + String(gps.minute()) + "," + String(gps.seconds()) + "," + String(gps.milliseconds())
@@ -256,15 +261,17 @@ void record() {
         sd.fileWrite(dataBuffer);
       }
 
-      if (button.poll() == 2){
+      if (button.poll() == 2 || hall.poll() == 2){
         submenu = 0;
         sd.fileClose();
+        buzzer.on(128);
         for (int i = 0; i < 5; i++) {
           RGB.yellow();
           delay(100);
           RGB.off();
           delay(100);
         }
+        buzzer.off();
         break;
       }
     }

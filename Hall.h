@@ -1,18 +1,18 @@
 // Thomas Quinn B224307 thomas.quinn93@icloud.com
 // 17ELD030 - Advanced Project
-// Button.h - For button inputs
+// Hall.h - For hall effect sensor monitoring
 
-#ifndef Button_h
-#define Button_h
+#ifndef Hall_h
+#define Hall_h
 
 #include "Arduino.h"
 
-#define ACTIVE HIGH // pull up = HIGH, pull down = LOW (CHANGE IN CPP AS WELL)
+#define ACTIVE LOW // pull up = HIGH, pull down = LOW (CHANGE IN CPP AS WELL)
 
-class Button
+class Hall
 {
   public:
-    Button(int buttonPin);
+    Hall(int hallPin);
     bool read();
     void readOnce();
     int poll();

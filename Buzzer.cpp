@@ -45,3 +45,25 @@ void Buzzer::startup() {
   delay(200);
   noTone(_pin);
 }
+
+bool Buzzer::flash(const int freq, int onTime, int offTime) {
+  if (buzzerState) {
+    analogWrite(_pin, freq);
+  } else {
+    off();
+  }
+
+  unsigned long currentMillis = millis();
+
+  if ((unsigned long)(currentMillis - previousMillis) >= interval) {
+    if (buzzerState) {
+      interval = offTime;
+    } else {
+      interval = onTime;
+    }
+    buzzerState = !buzzerState;
+    previousMillis = currentMillis;
+  }
+
+  return buzzerState;
+}

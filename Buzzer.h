@@ -14,9 +14,13 @@ class Buzzer
     void off();
     void on(unsigned int val);
     void startup();
+    bool flash(const int freq, int onTime, int offTime);
 
   private:
     int _pin;
+    int interval  = 0;
+    bool buzzerState = true;
+    unsigned long previousMillis  = 0;
 };
 
 #endif
