@@ -21,11 +21,12 @@
 //           - Data saves to file.
 // v1.06.00  - Created Hall Effect sensor class (Same as button class).
 //           - Added hall effect sensor to act as button.
+// v1.07.00  - Added error states. 1 = White (no gps fix), 2 = Cyan (SD failed
+//             to initalise), 3 = Magenta (battery error).
 
 // TODO
 // - Comment classes.
 // - Split file after time period.
-// - display errors on LED.
 // - Transfer Mode.
 
 // HARDWARE (From https://shop.pimoroni.com)
@@ -81,6 +82,9 @@ const bool RED[]     = {1, 0, 0};
 const bool GREEN[]   = {0, 1, 0};
 const bool BLUE[]    = {0, 0, 1};
 const bool YELLOW[]  = {1, 1, 0};
+const bool MAGENTA[] = {1, 0, 1};
+const bool CYAN[]    = {0, 1, 1};
+const bool WHITE[]   = {1, 1, 1};
 
 unsigned int menu       = 0;
 unsigned int submenu    = 0;
@@ -126,27 +130,44 @@ void start_up() {
 
 // Chooses the menu or submenu based on variable input.
 int menu_select(unsigned int buttonState, unsigned int hallState) {
-  if (buttonState == 1 || hallState == 1) {
+  if (buttonState == 1) {
     menu++;
     if (menu > 2) {
       menu = 0;
     }
-  } else if (buttonState == 2 || hallState == 2) {
+  } else if (buttonState == 2) {
     submenu++;
     if (submenu > 1) {
       submenu = 0;
     }
   }
 
+  if (hallState == 1) {
+    menu++;
+    if (menu > 2) {
+      menu = 0;
+    }
+  } else if (hallState == 2) {
+    submenu++;
+    if (submenu > 1) {
+      submenu = 0;
+    }
+  }
+
+
   return menu;
 }
 
 // Mode indicating ready to log.
 void idle() {
-  if (battery.charging() == true) {
-    RGB.fade(GREEN, 2000, 500);
+  if (battery.status() != 1) {
+    error(3);
   } else {
-    RGB.flash(GREEN, 50, 1500);
+    if (battery.charging() == true) {
+      RGB.fade(GREEN, 2000, 500);
+    } else {
+      RGB.flash(GREEN, 50, 1500);
+    }
   }
 }
 
@@ -224,41 +245,57 @@ void record() {
   }
 
   if (submenu == 1) {
+    buzzer.on(128);
     for (int i = 0; i < 5; i++) {
       RGB.red();
-      delay(500);
+      delay(100);
       RGB.off();
-      delay(500);
+      delay(100);
     }
+    buzzer.off();
 
-    sd.begin();
-    sd.fileName();
-    sd.fileCreate();
-    sd.writeHeader(gps.year(), gps.month(), gps.day(), sampleFreq);
+    bool sdInserted = sd.begin();
+
+    if (sdInserted == true) {
+      sd.fileName();
+      if (!sd.fileCreate()) {
+        error(2);
+      }
+      sd.writeHeader(gps.year(), gps.month(), gps.day(), sampleFreq);
+    }
 
     while(1) {
       unsigned long currentMillis = millis();
       static unsigned long previousMillis = 0;
 
-      if (battery.charging() == true) {
-        RGB.fade(RED, 2000, 500);
+      if (sdInserted == true) {
+        if (battery.charging() == true) {
+          RGB.fade(RED, 2000, 500);
+        } else {
+          RGB.flash(RED, 50, 1500);
+        }
+
+        gps.read();
+        buzzer.flash(128, 50, 1500);
+        if (currentMillis - previousMillis >= (1000/sampleFreq)) {
+          previousMillis = currentMillis;
+          String data = {String(gps.hour()) + "," + String(gps.minute()) + "," + String(gps.seconds()) + "," + String(gps.milliseconds())
+          + "," + String(gps.latitude()) + "," + String(gps.lat()) + "," + String(gps.latitude_fixed()) + "," + String(gps.latitudeDegrees())
+          + "," + String(gps.longitude()) + "," + String(gps.lon()) + "," + String(gps.longitude_fixed()) + "," + String(gps.longitudeDegrees())
+          + "," + String(gps.HDOP()) + "," + String(gps.geoidheight()) + "," + String(gps.magvariation()) + "," + String(gps.speed())
+          + "," + String(gps.angle()) + "," + String(gps.altitude()) + "," + String(gps.fixquality()) + "," + String(gps.satellites()) + "," + String(gps.fix())};
+          char dataBuffer[data.length()+15];
+          data.toCharArray(dataBuffer,data.length()+15);
+
+          if (!gps.fix()) {
+            error(1);
+          }
+
+          sd.fileWrite(dataBuffer);
+
+        }
       } else {
-        RGB.flash(RED, 50, 1500);
-      }
-
-      gps.read();
-      buzzer.flash(128, 50, 1500);
-      if (currentMillis - previousMillis >= (1000/sampleFreq)) {
-        previousMillis = currentMillis;
-        String data = {String(gps.hour()) + "," + String(gps.minute()) + "," + String(gps.seconds()) + "," + String(gps.milliseconds())
-        + "," + String(gps.latitude()) + "," + String(gps.lat()) + "," + String(gps.latitude_fixed()) + "," + String(gps.latitudeDegrees())
-        + "," + String(gps.longitude()) + "," + String(gps.lon()) + "," + String(gps.longitude_fixed()) + "," + String(gps.longitudeDegrees())
-        + "," + String(gps.HDOP()) + "," + String(gps.geoidheight()) + "," + String(gps.magvariation()) + "," + String(gps.speed())
-        + "," + String(gps.angle()) + "," + String(gps.altitude()) + "," + String(gps.fixquality()) + "," + String(gps.satellites()) + "," + String(gps.fix())};
-        char dataBuffer[data.length()+15];
-        data.toCharArray(dataBuffer,data.length()+15);
-
-        sd.fileWrite(dataBuffer);
+        error(2);
       }
 
       if (button.poll() == 2 || hall.poll() == 2){
@@ -275,5 +312,28 @@ void record() {
         break;
       }
     }
+  }
+}
+
+// blink out an error code
+void error(uint8_t errno) {
+  switch (errno) {
+    case 2:
+      if (battery.charging() == true) {
+        RGB.fade(CYAN, 2000, 500);
+      } else {
+        RGB.flash(CYAN, 50, 1500);
+      }
+      break;
+    case 3:
+      RGB.magenta();
+      break;
+    default:
+      if (battery.charging() == true) {
+        RGB.fade(WHITE, 2000, 500);
+      } else {
+        RGB.flash(WHITE, 50, 1500);
+      }
+      break;
   }
 }

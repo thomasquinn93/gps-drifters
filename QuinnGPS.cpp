@@ -54,7 +54,7 @@ void QuinnGPS::begin(float fs) {
 void QuinnGPS::read() {
   char c = GPS.read();
 
-  // if a sentence is received, we can check the checksum, parse it...
+  // if a sentence is received, we can check the checksum and parse it
   if (GPS.newNMEAreceived()) {
     // Calling lastNMEA clears received flag and can cause small race conditions
     //    if new data comes in before parse is called again.
@@ -64,19 +64,6 @@ void QuinnGPS::read() {
     //    for another
     if (!GPS.parse(stringptr))
       return;
-
-    // if (LOG_FIXONLY && !GPS.fix) {
-    //   //Serial.print("No Fix");
-    //   return;
-    // }
-
-    //Serial.println(stringptr);
-
-  //   uint8_t stringsize = strlen(stringptr);
-  //   if (stringsize != logfile.write((uint8_t *)stringptr, stringsize))    //write the string to the SD file
-  //      error(4);
-  //   if (strstr(stringptr, "RMC") || strstr(stringptr, "GGA"))   logfile.flush();
-  //   Serial.println();
   }
 }
 
