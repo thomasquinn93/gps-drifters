@@ -2,7 +2,7 @@
 // 17ELD030 - Advanced Project
 // GPS Drifter Code
 
-#define VERSION "1.06.00"
+#define VERSION "1.07.01"
 
 // VERSION HISTORY
 // v1.00.00  - RGB class written with both analog and digital outs.
@@ -23,6 +23,7 @@
 //           - Added hall effect sensor to act as button.
 // v1.07.00  - Added error states. 1 = White (no gps fix), 2 = Cyan (SD failed
 //             to initalise), 3 = Magenta (battery error).
+// v1.07.01  - Changed charging constant from 4.6v to 4.4v.
 
 // TODO
 // - Comment classes.

@@ -48,7 +48,7 @@ bool Battery::charging() {
   chargeVolt *= LOGIC;   // multiply by the reference voltage of 3.3v
   chargeVolt /= 1024;    // convert to voltage
 
-  if (chargeVolt >= 4.6) {
+  if (chargeVolt >= 4.4) {
     charging = true;
   }
   return charging;
