@@ -30,7 +30,7 @@ float Battery::read() {
 int Battery::status() {
   unsigned int state = 0;
   float voltage = read();
-  if (voltage > MAX*1.05) {
+  if (voltage > MAX*1.06) {
     state = 3;
   } else if (voltage < MIN) {
     state = 2;
@@ -48,7 +48,7 @@ bool Battery::charging() {
   chargeVolt *= LOGIC;   // multiply by the reference voltage of 3.3v
   chargeVolt /= 1024;    // convert to voltage
 
-  if (chargeVolt >= 4.4) {
+  if (chargeVolt >= 4.6) {
     charging = true;
   }
   return charging;

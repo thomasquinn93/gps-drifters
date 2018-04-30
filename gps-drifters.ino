@@ -24,6 +24,8 @@
 // v1.07.00  - Added error states. 1 = White (no gps fix), 2 = Cyan (SD failed
 //             to initalise), 3 = Magenta (battery error).
 // v1.07.01  - Changed charging constant from 4.6v to 4.4v.
+// v1.07.02  - Reverted charging constant to 4.6v.
+//           - Changed overcharge voltage from MAX*1.05 to MAX*1.06.
 
 // TODO
 // - Comment classes.
