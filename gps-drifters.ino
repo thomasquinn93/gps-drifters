@@ -2,7 +2,7 @@
 // 17ELD030 - Advanced Project
 // GPS Drifter Code
 
-#define VERSION "1.07.01"
+#define VERSION "1.08.00"
 
 // VERSION HISTORY
 // v1.00.00  - RGB class written with both analog and digital outs.
@@ -26,6 +26,8 @@
 // v1.07.01  - Changed charging constant from 4.6v to 4.4v.
 // v1.07.02  - Reverted charging constant to 4.6v.
 //           - Changed overcharge voltage from MAX*1.05 to MAX*1.06.
+// v1.08.00  - Added battery voltage data saved to SD card.
+//           - Suppressed buzzer when logging for battery life testing.
 
 // TODO
 // - Comment classes.
@@ -279,18 +281,19 @@ void record() {
         }
 
         gps.read();
-        buzzer.flash(128, 50, 1500);
+        //buzzer.flash(128, 50, 1500);
         if (currentMillis - previousMillis >= (1000/sampleFreq)) {
           previousMillis = currentMillis;
           String data = {String(gps.hour()) + "," + String(gps.minute()) + "," + String(gps.seconds()) + "," + String(gps.milliseconds())
           + "," + String(gps.latitude()) + "," + String(gps.lat()) + "," + String(gps.latitude_fixed()) + "," + String(gps.latitudeDegrees())
           + "," + String(gps.longitude()) + "," + String(gps.lon()) + "," + String(gps.longitude_fixed()) + "," + String(gps.longitudeDegrees())
           + "," + String(gps.HDOP()) + "," + String(gps.geoidheight()) + "," + String(gps.magvariation()) + "," + String(gps.speed())
-          + "," + String(gps.angle()) + "," + String(gps.altitude()) + "," + String(gps.fixquality()) + "," + String(gps.satellites()) + "," + String(gps.fix())};
-          char dataBuffer[data.length()+15];
-          data.toCharArray(dataBuffer,data.length()+15);
+          + "," + String(gps.angle()) + "," + String(gps.altitude()) + "," + String(gps.fixquality()) + "," + String(gps.satellites()) + "," + String(gps.fix())
+          + "," + String(battery.read())};
+          char dataBuffer[data.length()+22];
+          data.toCharArray(dataBuffer,data.length()+22);
 
-          if (!gps.fix()) {
+          if (gps.fix() == 0) {
             error(1);
           }
 

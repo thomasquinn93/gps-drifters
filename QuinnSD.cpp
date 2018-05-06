@@ -110,6 +110,8 @@ void QuinnSD::writeHeader(uint8_t year, uint8_t month, uint8_t day, float sample
   file.print(",");
   file.print("Satellites");
   file.print(",");
-  file.println("Fix");
+  file.print("Fix");
+  file.print(",");
+  file.println("Battery (V)");
   fileClose();
 }
