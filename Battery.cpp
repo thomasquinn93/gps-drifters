@@ -10,7 +10,7 @@
 
 #define LOGIC 3.3 // microcontroller logic level
 #define MAX   4.2 // battery max voltage
-#define MIN   3.2 // battery min voltage
+#define MIN   3.7 // battery min voltage
 
 Battery::Battery(int batteryPin, int chargePin) {
   pinMode(batteryPin, INPUT_PULLUP);
@@ -48,7 +48,7 @@ bool Battery::charging() {
   chargeVolt *= LOGIC;   // multiply by the reference voltage of 3.3v
   chargeVolt /= 1024;    // convert to voltage
 
-  if (chargeVolt >= 4.6) {
+  if (chargeVolt >= 4.4) {
     charging = true;
   }
   return charging;

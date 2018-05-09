@@ -2,7 +2,7 @@
 // 17ELD030 - Advanced Project
 // GPS Drifter Code
 
-#define VERSION "1.08.00"
+#define VERSION "1.09.00"
 
 // VERSION HISTORY
 // v1.00.00  - RGB class written with both analog and digital outs.
@@ -28,6 +28,11 @@
 //           - Changed overcharge voltage from MAX*1.05 to MAX*1.06.
 // v1.08.00  - Added battery voltage data saved to SD card.
 //           - Suppressed buzzer when logging for battery life testing.
+// v1.09.00  - Changed minimum battery voltage to 3.7v before error is
+//             displayed due to voltage required for FlashAir SD card.
+//           - Changed min charge detect voltage to 4.4V.
+//           - Unsuppressed buzzer when logging.
+//           - Fixed the white LED no fix bug.
 
 // TODO
 // - Comment classes.
@@ -38,7 +43,7 @@
 // Adafruit Feather M0 Adalogger     - ADA2796.
 // Adafruit FeatherWing - RTC + SD   - ADA2992.
 // Adafruit Ultimate GPS FeatherWing - ADA3133.
-// C.Anode RGB LED and 3v Buzzer driven with microcontroller as current sync
+// C.Anode RGB LED and 3v Buzzer driven with microcontroller as current sync.
 
 // I/O (Determined via stackable board layout)
 // GPS RX       - Pin 0.
@@ -91,14 +96,16 @@ const bool MAGENTA[] = {1, 0, 1};
 const bool CYAN[]    = {0, 1, 1};
 const bool WHITE[]   = {1, 1, 1};
 
-unsigned int menu       = 0;
-unsigned int submenu    = 0;
-const float sampleFreq  = 1;  // 0.2, 0.1, 1, 2 or 5 Hz
+unsigned int menu     = 0;
+unsigned int submenu  = 0;
+float sampleFreq      = 1;     // 0.2, 0.1, 1, 2 or 5 Hz
+bool logCharge        = true;  // Log while charging?
 
 // SETUP & LOOP ===============================================================
 
 void setup() {
   start_up();
+  checkConfig();
 }
 
 void loop() {
@@ -108,11 +115,11 @@ void loop() {
       idle();
       break;
     case 1:   // loggging mode
-      // if (battery.charging()) {
-      //   menu++;
-      //   break;
-      // }
-      record();
+      if (battery.charging() && logCharge == false) {
+        menu++;
+      } else {
+        record();
+      }
       break;
     case 2:   // live mode
       live();
@@ -142,7 +149,7 @@ int menu_select(unsigned int buttonState, unsigned int hallState) {
     }
   } else if (buttonState == 2) {
     submenu++;
-    if (submenu > 1) {
+    if (submenu > 1 || menu != 1) {
       submenu = 0;
     }
   }
@@ -237,7 +244,6 @@ void live() {
 
     Serial.print("Millis: ");             Serial.println(millis());
     Serial.println("");
-
   }
 }
 
@@ -270,32 +276,34 @@ void record() {
     }
 
     while(1) {
+      static int fix = 0;
       unsigned long currentMillis = millis();
       static unsigned long previousMillis = 0;
 
       if (sdInserted == true) {
-        if (battery.charging() == true) {
-          RGB.fade(RED, 2000, 500);
+        if (fix == 0) {
+          error(1);
         } else {
-          RGB.flash(RED, 50, 1500);
+          if (battery.charging() == true) {
+            RGB.fade(RED, 2000, 500);
+          } else {
+            RGB.flash(RED, 50, 1500);
+          }
         }
 
         gps.read();
-        //buzzer.flash(128, 50, 1500);
+        buzzer.flash(128, 50, 1500);
         if (currentMillis - previousMillis >= (1000/sampleFreq)) {
           previousMillis = currentMillis;
+          fix = gps.fix();
           String data = {String(gps.hour()) + "," + String(gps.minute()) + "," + String(gps.seconds()) + "," + String(gps.milliseconds())
           + "," + String(gps.latitude()) + "," + String(gps.lat()) + "," + String(gps.latitude_fixed()) + "," + String(gps.latitudeDegrees())
           + "," + String(gps.longitude()) + "," + String(gps.lon()) + "," + String(gps.longitude_fixed()) + "," + String(gps.longitudeDegrees())
           + "," + String(gps.HDOP()) + "," + String(gps.geoidheight()) + "," + String(gps.magvariation()) + "," + String(gps.speed())
-          + "," + String(gps.angle()) + "," + String(gps.altitude()) + "," + String(gps.fixquality()) + "," + String(gps.satellites()) + "," + String(gps.fix())
+          + "," + String(gps.angle()) + "," + String(gps.altitude()) + "," + String(gps.fixquality()) + "," + String(gps.satellites()) + "," + String(fix)
           + "," + String(battery.read())};
           char dataBuffer[data.length()+22];
           data.toCharArray(dataBuffer,data.length()+22);
-
-          if (gps.fix() == 0) {
-            error(1);
-          }
 
           sd.fileWrite(dataBuffer);
 
@@ -324,6 +332,13 @@ void record() {
 // blink out an error code
 void error(uint8_t errno) {
   switch (errno) {
+    default:
+      if (battery.charging() == true) {
+        RGB.fade(WHITE, 2000, 500);
+      } else {
+        RGB.flash(WHITE, 50, 1500);
+      }
+      break;
     case 2:
       if (battery.charging() == true) {
         RGB.fade(CYAN, 2000, 500);
@@ -334,12 +349,11 @@ void error(uint8_t errno) {
     case 3:
       RGB.magenta();
       break;
-    default:
-      if (battery.charging() == true) {
-        RGB.fade(WHITE, 2000, 500);
-      } else {
-        RGB.flash(WHITE, 50, 1500);
-      }
-      break;
   }
+}
+
+// Checks the config file in the root directory of the SD for the sample rate
+//    and to see if it should have the option to log data while charging.
+void checkConfig() {
+
 }
