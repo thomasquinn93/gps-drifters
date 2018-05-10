@@ -115,3 +115,43 @@ void QuinnSD::writeHeader(uint8_t year, uint8_t month, uint8_t day, float sample
   file.println("Battery (V)");
   fileClose();
 }
+
+bool QuinnSD::setConfig() {
+  bool exist = true;
+
+  strcpy(configName, "config.txt");
+  conFile = SD.open(configName);
+
+  if (!conFile || !SD.exists(configName)) {
+    exist = false;
+  } else {
+    conFile.read(buffer,22);
+    String logCharge = getValue(buffer,',',1);
+    String sampleFreq = getValue(buffer,',',3);
+    config[0] = logCharge.toFloat();
+    config[1] = sampleFreq.toFloat();
+  }
+  conFile.close();
+  return exist;
+}
+
+float QuinnSD::getConfig(int n) {
+  return config[n];
+}
+
+String QuinnSD::getValue(String data, char separator, int index)
+{
+  int found = 0;
+  int strIndex[] = {0, -1};
+  int maxIndex = data.length()-1;
+
+  for(int i=0; i<=maxIndex && found<=index; i++){
+    if(data.charAt(i)==separator || i==maxIndex){
+        found++;
+        strIndex[0] = strIndex[1]+1;
+        strIndex[1] = (i == maxIndex) ? i+1 : i;
+    }
+  }
+
+  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
+}

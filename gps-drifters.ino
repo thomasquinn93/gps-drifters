@@ -2,7 +2,7 @@
 // 17ELD030 - Advanced Project
 // GPS Drifter Code
 
-#define VERSION "1.09.00"
+#define VERSION "2.00.00"
 
 // VERSION HISTORY
 // v1.00.00  - RGB class written with both analog and digital outs.
@@ -33,11 +33,12 @@
 //           - Changed min charge detect voltage to 4.4V.
 //           - Unsuppressed buzzer when logging.
 //           - Fixed the white LED no fix bug.
+// v2.00.00  - Added feature to load data from config file (log while charging,
+//           - and Sample rate).
 
 // TODO
 // - Comment classes.
 // - Split file after time period.
-// - Transfer Mode.
 
 // HARDWARE (From https://shop.pimoroni.com)
 // Adafruit Feather M0 Adalogger     - ADA2796.
@@ -329,7 +330,7 @@ void record() {
   }
 }
 
-// blink out an error code
+// Error code displayed on RGB LED
 void error(uint8_t errno) {
   switch (errno) {
     default:
@@ -355,5 +356,11 @@ void error(uint8_t errno) {
 // Checks the config file in the root directory of the SD for the sample rate
 //    and to see if it should have the option to log data while charging.
 void checkConfig() {
+  if (sd.begin() && sd.setConfig()){
+    logCharge  = (bool) sd.getConfig(0);
+    sampleFreq = sd.getConfig(1);
+    Serial.println(logCharge);
+    Serial.println(sampleFreq);
+  }
 
 }

@@ -20,11 +20,18 @@ class QuinnSD
     void fileWrite(char dataBuffer[]);
     void fileClose();
     void writeHeader(uint8_t year, uint8_t month, uint8_t day, float sampleFreq);
+    bool setConfig();
+    float getConfig(int n);
+    String getValue(String data, char separator, int index);
 
   private:
     int _pins[2];
     File file;
+    File conFile;
     char filename[21];
+    char configName[12];
+    float config[2];
+    char buffer[22];
 };
 
 #endif
