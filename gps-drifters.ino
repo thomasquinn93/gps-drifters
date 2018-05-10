@@ -359,8 +359,5 @@ void checkConfig() {
   if (sd.begin() && sd.setConfig()){
     logCharge  = (bool) sd.getConfig(0);
     sampleFreq = sd.getConfig(1);
-    Serial.println(logCharge);
-    Serial.println(sampleFreq);
   }
-
 }
