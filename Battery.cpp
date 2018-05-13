@@ -51,6 +51,5 @@ bool Battery::charging() {
   if (chargeVolt >= 4.25) {
     charging = true;
   }
-
   return charging;
 }

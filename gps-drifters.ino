@@ -2,7 +2,7 @@
 // 17ELD030 - Advanced Project
 // GPS Drifter Code
 
-#define VERSION "2.00.01"
+#define VERSION "2.00.02"
 
 // VERSION HISTORY
 // v1.00.00  - RGB class written with both analog and digital outs.
@@ -36,7 +36,7 @@
 // v2.00.00  - Added feature to load data from config file (log while charging,
 //           - and Sample rate).
 // v2.00.01  - Reduced charging voltage indicator to 4.25v.
-//           - Added extra comments.
+// v2.00.02  - Added extra comments.
 
 // TODO
 // - Comment classes.
