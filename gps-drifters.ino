@@ -2,7 +2,7 @@
 // 17ELD030 - Advanced Project
 // GPS Drifter Code
 
-#define VERSION "2.00.00"
+#define VERSION "2.00.01"
 
 // VERSION HISTORY
 // v1.00.00  - RGB class written with both analog and digital outs.
@@ -35,16 +35,23 @@
 //           - Fixed the white LED no fix bug.
 // v2.00.00  - Added feature to load data from config file (log while charging,
 //           - and Sample rate).
+// v2.00.01  - Reduced charging voltage indicator to 4.25v.
+//           - Added extra comments.
 
 // TODO
 // - Comment classes.
 // - Split file after time period.
 
 // HARDWARE (From https://shop.pimoroni.com)
-// Adafruit Feather M0 Adalogger     - ADA2796.
-// Adafruit FeatherWing - RTC + SD   - ADA2992.
-// Adafruit Ultimate GPS FeatherWing - ADA3133.
+// Adafruit Feather M0 Adalogger      - ADA2796.
+// Adafruit FeatherWing - RTC + SD    - ADA2992.
+// Adafruit Ultimate GPS FeatherWing  - ADA3133.
+
+// Other Hardware
 // C.Anode RGB LED and 3v Buzzer driven with microcontroller as current sync.
+// Pull High Button using 10k pull down resistor.
+// RS Components Unipolar Hall Effect - 680-7245.
+// Toshiba FlashAir used as SD card.
 
 // I/O (Determined via stackable board layout)
 // GPS RX       - Pin 0.
